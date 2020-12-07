@@ -37,4 +37,9 @@ ipcMain.handle('getRegions', async (event) => {
   const html = await response.text();
   const $ = cheerio.load(html)
   return JSON.parse($('[id="__NEXT_DATA__"]').html());
-})
+});
+
+ipcMain.handle('getCount', async (event, filter) => {
+  const response = await fetch(`https://cre-api.kufar.by/items-search/v1/engine/v1/search/count?${filter}`);
+  return await response.json();
+});

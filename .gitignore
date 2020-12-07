@@ -1,3 +1,6 @@
+.idea
+*.xlsx
+
 # Logs
 logs
 *.log
