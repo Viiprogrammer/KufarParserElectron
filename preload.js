@@ -2,15 +2,8 @@
 // It has the same sandbox as a Chrome extension.
 const { ipcRenderer } = require('electron');
 
-let regions = [];
-window.addEventListener('DOMContentLoaded', () => {
-  console.log('Render')
-
-})
-
 ipcRenderer.invoke('getRegions').then((result) => {
   window.categories = result.props.initialState.filters.filtersData.metadata.parameters.refs[902].values;
-  //console.log();
   window.regions = Object.entries(result.props.initialState.location.regions).sort((a, b) => {
     return a['order'] > b['order'] ? 1 : -1;
   });
@@ -25,7 +18,6 @@ ipcRenderer.invoke('getRegions').then((result) => {
     var opt = document.createElement('option');
     opt.innerHTML = window.categories[i]['labels']['ru'];
     opt.value = window.categories[i].value;
-    //console.log(areas[i][0]);
     categories_el.appendChild(opt);
   }
 
