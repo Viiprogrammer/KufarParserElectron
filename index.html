@@ -76,11 +76,27 @@
                 <div class="row">
                     <div class="col-md">
                         <div class="form-group">
-                            <label for="n_request_delay_count">Разделитель:</label>
+                            <label for="deliminer">Разделитель:</label>
                             <input value="," type="text" onkeyup="(() => {
                 enforceMinMax(this);
                 settings.set(this.id, this.value)
               })()" maxlength="3" class="form-control" id="deliminer" placeholder="">
+                        </div>
+                    </div>
+                </div>
+
+
+                <div class="alert alert-info" role="alert">
+                    Разделитель нескольких номеров телефонов
+                </div>
+                <div class="row">
+                    <div class="col-md">
+                        <div class="form-group">
+                            <label for="phones_deliminer">Разделитель номеров:</label>
+                            <input value=";" type="text" onkeyup="(() => {
+                enforceMinMax(this);
+                settings.set(this.id, this.value)
+              })()" maxlength="3" class="form-control" id="phones_deliminer" placeholder="">
                         </div>
                     </div>
                 </div>

@@ -19,6 +19,11 @@ async function createWindow () {
   if(!settings.hasSync('deliminer')){
     settings.setSync('deliminer', '|')
   }
+
+  if(!settings.hasSync('phones_deliminer')){
+    settings.setSync('phones_deliminer', ';')
+  }
+
   // Create the browser window.
   const mainWindow = new BrowserWindow({
     width: 800,
@@ -28,7 +33,8 @@ async function createWindow () {
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: true,
-      enableRemoteModule: true
+      enableRemoteModule: true,
+      contextIsolation: false
     }
   })
   mainWindow.loadFile('index.html')

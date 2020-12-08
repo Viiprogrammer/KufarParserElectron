@@ -11,9 +11,9 @@ ipcRenderer.invoke('getRegions').then((result) => {
   var categories_el = document.getElementById('categories');
   var opt = document.createElement('option');
   opt.innerHTML = 'Любая';
+  opt.value = '0';
   categories_el.innerHTML = '';
   categories_el.appendChild(opt);
-  opt.value = '0';
   for(let i = 1; i < window.categories.length; i++) {
     var opt = document.createElement('option');
     opt.innerHTML = window.categories[i]['labels']['ru'];

@@ -10,17 +10,31 @@ const {ipcRenderer, remote} = require('electron'),
     dialog = remote.dialog,
     WIN = remote.getCurrentWindow();
 
-const delay = async (ms) => await new Promise(resolve => setTimeout(resolve, ms));
-let one_second = 1000
-    , one_minute = one_second * 60
-    , one_hour = one_minute * 60
-    , startDate = new Date()
-    , stoped = true
-    , paused = false
-    , face = document.getElementById('timer');
+let one_second = 1000,
+    one_minute = one_second * 60,
+    one_hour = one_minute * 60,
+    startDate = new Date(),
+    stoped = true,
+    paused = false,
+    face = document.getElementById('timer');
 
-// http://paulirish.com/2011/requestanimationframe-for-smart-animating/
-var requestAnimationFrame = (function () {
+async function delay(ms){
+    await new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function exportf() {
+    let file = await dialog.showSaveDialog(WIN, {
+        title: "Export file",
+        defaultPath: "",
+        buttonLabel: "Export",
+        filters: [
+            {name: 'Exel', extensions: ['xlsx']},
+            {name: 'Text', extensions: ['txt']},
+        ]
+    });
+    $("#savefselected").removeClass('d-none');
+}
+const requestAnimationFrame = (function () {
     return window.requestAnimationFrame ||
         window.webkitRequestAnimationFrame ||
         window.mozRequestAnimationFrame ||
@@ -30,8 +44,6 @@ var requestAnimationFrame = (function () {
             window.setTimeout(callback, 1000 / 60);
         };
 }());
-
-tick();
 
 function tick() {
 
@@ -54,37 +66,15 @@ function tick() {
 
 }
 
-
-let options = {
-    //Placeholder 1
-    title: "Export file",
-
-    //Placeholder 2
-    defaultPath: "",
-
-    //Placeholder 4
-    buttonLabel: "Export",
-
-    //Placeholder 3
-    filters: [
-        {name: 'Exel', extensions: ['xlsx']},
-        {name: 'Text', extensions: ['txt']},
-    ]
-}
-update_count();
-
-async function exportf() {
-    let file = await dialog.showSaveDialog(WIN, options);
-    $("#savefselected").removeClass('d-none');
-}
-
 function loadAreas(val) {
-    var areas_el = document.getElementById('areas');
-    var opt = document.createElement('option');
-    opt.innerHTML = 'Все';
+    let areas_el = document.getElementById('areas');
+        default_opt = document.createElement('option');
+
+    default_opt.innerHTML = 'Все';
+    default_opt.value = '0';
     areas_el.innerHTML = '';
-    areas_el.appendChild(opt);
-    opt.value = '0';
+    areas_el.appendChild(default_opt);
+
     if (val == 0) {
         areas_el.disabled = true;
         return false;
@@ -97,16 +87,16 @@ function loadAreas(val) {
         return a[1]['order'] > b[1]['order'] ? 1 : -1;
     });
 
-    var areas_el = document.getElementById('areas');
     for (let i = 1; i < areas.length; i++) {
         var opt = document.createElement('option');
         opt.innerHTML = areas[i][1]['labels']['ru'];
         opt.value = areas[i][0];
-        //console.log(areas[i][0]);
         areas_el.appendChild(opt);
     }
 }
-
+function capitalizeFirstLetter(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
+}
 function update_count() {
     let q = query();
     ipcRenderer.invoke('getCount', query()).then((result) => {
@@ -155,6 +145,8 @@ async function start(el) {
     const delay_between = Number($("#between_requests").val()),
         delay_requests = Number($("#n_request_delay").val()),
         delay_n = Number($("#n_request_delay_count").val());
+        delimiter = $("#deliminer").val().trim();
+        phones_delimiter = $("#phones_deliminer").val().trim();
     let requests_counter = 0;
 
     let hiddened_count = 0, numbers_parsed = 0, ads_parsed = 0, errors = 0;
@@ -192,7 +184,7 @@ async function start(el) {
                 }
             });
 
-            if (response.status == 200) {
+            if (response.status === 200) {
                 json = await response.json();
                 if (json.ads) {
                     for (let ad of json.ads) {
@@ -200,12 +192,11 @@ async function start(el) {
                         if (ad.phone_hidden === false && ad.phone) {
                             numbers_parsed++;
                             if (ad.account_parameters !== undefined) {
-                                if (ad.account_parameters !== undefined) {
-                                    if (ad.company_ad === false) {
-                                        const name = ad.account_parameters.find((x) => x.p === 'name');
-                                        if (name) {
-                                            //console.log(name.v)
-                                        }
+                                const name = ad.account_parameters.find((x) => x.p === 'name');
+                                const phones = ad.phone.split(',').join(phones_delimiter);
+                                if (ad.company_ad === false) {
+                                    if (name) {
+                                        console.log(capitalizeFirstLetter(name.v.trim()), phones)
                                     }
                                 }
                             }
@@ -329,5 +320,6 @@ function query(cursor = false) {
     }
 
     return $.param(filter);
-    ;
 }
+
+update_count();
