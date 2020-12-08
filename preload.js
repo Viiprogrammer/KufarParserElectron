@@ -31,7 +31,6 @@ ipcRenderer.invoke('getRegions').then((result) => {
     var opt = document.createElement('option');
     opt.innerHTML = window.regions[i][1]['labels']['ru'];
     opt.value = window.regions[i][0];
-    console.log(window.regions[i][0]);
     region_el.appendChild(opt);
   }
 });

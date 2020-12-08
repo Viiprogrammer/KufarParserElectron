@@ -1,144 +1,261 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <!-- Required meta tags -->
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
-  <script>window.$ = window.jQuery = require('jquery');</script>
-  <!-- Bootstrap CSS -->
-  <link href="./css/bootstrap.min.css" rel="stylesheet">
-  <title>Kufar parser</title>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline'; ">
+    <!-- Bootstrap CSS -->
+    <script src="./node_modules/popper.js/dist/umd/popper.js"></script>
+    <link rel="stylesheet" href="./node_modules/bootstrap/dist/css/bootstrap.min.css">
+    <title>Kufar parser</title>
+    <script>
+        window.$ = window.jQuery = require('jquery');
+        //require('popper.js');
+        require('bootstrap');
+    </script>
 </head>
-<body>
+<body class="user-select-none">
+
+<!-- Settings -->
+<div class="modal fade" id="settings" tabindex="-1" role="dialog" aria-labelledby="settingsTitle" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="settingsTitle">Настройки</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info" role="alert">
+                    Задержка после каждого выполненого запроса
+                </div>
+                <div class="row">
+                    <div class="col-md">
+                        <div class="form-group">
+                            <label for="between_requests">Задержка между запросами:</label>
+                            <input value="0" type="number" onkeyup="(() => {
+                enforceMinMax(this);
+                settings.set(this.id, this.value)
+              })()" min="0" max="5000" maxlength="4" class="form-control" id="between_requests" placeholder="">
+                        </div>
+                    </div>
+                </div>
+                <hr>
+                <div class="alert alert-info" role="alert">
+                    Настройки предической паузы каждые N запросов для обхода ограниченией сервера
+                </div>
+                <div class="row">
+                    <div class="col-md">
+                        <div class="form-group">
+                            <label for="n_request_delay">Задержка каждые N запросов:</label>
+                            <input value="0" type="number" onkeyup="(() => {
+                enforceMinMax(this);
+                settings.set(this.id, this.value)
+              })()" min="0" maxlength="7" max="1000000" class="form-control" id="n_request_delay" placeholder="">
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md">
+                        <div class="form-group">
+                            <label for="n_request_delay_count">Кол-во запросов:</label>
+                            <input value="0" type="number" onkeyup="(() => {
+                enforceMinMax(this);
+                settings.set(this.id, this.value)
+              })()" min="2" max="99999999" maxlength="8" class="form-control" id="n_request_delay_count" placeholder="">
+                        </div>
+                    </div>
+                </div>
+                <h4>Export</h4>
+                <div class="alert alert-info" role="alert">
+                    Разделитель будет использован при экспорте в текстовый файл *.txt
+                </div>
+                <div class="row">
+                    <div class="col-md">
+                        <div class="form-group">
+                            <label for="n_request_delay_count">Разделитель:</label>
+                            <input value="," type="text" onkeyup="(() => {
+                enforceMinMax(this);
+                settings.set(this.id, this.value)
+              })()" maxlength="3" class="form-control" id="deliminer" placeholder="">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Закрыть</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 <div class="container mt-2">
+    <div class="row">
+        <div class="col-sm">
+            <h5>Состояние</h5>
+            <div class="form-check">
+                <input class="form-check-input" onclick="update_count()" type="radio" name="condition" id="condition1"
+                       value="0" checked>
+                <label class="form-check-label" for="condition1">
+                    Любое
+                </label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" onclick="update_count()" type="radio" name="condition" id="condition2"
+                       value="1">
+                <label class="form-check-label" for="condition2">
+                    Новое
+                </label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" onclick="update_count()" type="radio" name="condition" id="condition3"
+                       value="2">
+                <label class="form-check-label" for="condition3">
+                    Б/у
+                </label>
+            </div>
+        </div>
+        <div class="col-sm">
+            <h5>Продавец</h5>
+            <div class="form-check">
+                <input class="form-check-input" onclick="update_count()" type="radio" name="seller" id="seller_type1"
+                       value="0" checked>
+                <label class="form-check-label" for="seller_type1">
+                    Любой
+                </label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" onclick="update_count()" type="radio" name="seller" id="seller_type2"
+                       value="1">
+                <label class="form-check-label" for="seller_type2">
+                    Частное лицо
+                </label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" onclick="update_count()" type="radio" name="seller" id="seller_type3"
+                       value="2">
+                <label class="form-check-label" for="seller_type3">
+                    Компания
+                </label>
+            </div>
+        </div>
+        <div class="col-sm">
+            <h5>Опции</h5>
+            <div class="custom-control custom-checkbox">
+                <input onchange="update_count()" type="checkbox" class="custom-control-input" id="delivery">
+                <label class="custom-control-label" for="delivery">Товары с Куфар Доставкой</label>
+            </div>
+            <div class="custom-control custom-checkbox">
+                <input onchange="update_count()" type="checkbox" class="custom-control-input" id="installment">
+                <label class="custom-control-label" for="installment">Товары в рассрочку</label>
+            </div>
+            <div class="custom-control custom-checkbox">
+                <input onchange="update_count()" type="checkbox" class="custom-control-input" id="withphoto">
+                <label class="custom-control-label" for="withphoto">Только с фото</label>
+            </div>
+            <div class="custom-control custom-checkbox">
+                <input onchange="update_count()" type="checkbox" class="custom-control-input" id="maybetrade">
+                <label class="custom-control-label" for="maybetrade">Возможен обмен</label>
+            </div>
 
-  <div class="row">
-    <div class="col-sm">
-      <h5>Состояние</h5>
-      <div class="form-check">
-        <input class="form-check-input" onclick="update_count()" type="radio" name="condition" id="condition1" value="0" checked>
-        <label class="form-check-label" for="condition1">
-          Любое
-        </label>
-      </div>
-      <div class="form-check">
-        <input class="form-check-input" onclick="update_count()" type="radio" name="condition" id="condition2" value="1">
-        <label class="form-check-label" for="condition2">
-          Новое
-        </label>
-      </div>
-      <div class="form-check">
-        <input class="form-check-input" onclick="update_count()" type="radio" name="condition" id="condition3" value="2">
-        <label class="form-check-label" for="condition3">
-          Б/у
-        </label>
-      </div>
+        </div>
     </div>
-    <div class="col-sm">
-      <h5>Продавец</h5>
-      <div class="form-check">
-        <input class="form-check-input"  onclick="update_count()" type="radio" name="seller" id="seller_type1" value="0" checked>
-        <label class="form-check-label" for="seller_type1">
-          Любой
-        </label>
-      </div>
-      <div class="form-check">
-        <input class="form-check-input" onclick="update_count()" type="radio" name="seller" id="seller_type2" value="1">
-        <label class="form-check-label" for="seller_type2">
-          Частное лицо
-        </label>
-      </div>
-      <div class="form-check">
-        <input class="form-check-input" onclick="update_count()" type="radio" name="seller" id="seller_type3" value="2">
-        <label class="form-check-label" for="seller_type3">
-          Компания
-        </label>
-      </div>
-    </div>
-    <div class="col-sm">
-      <h5>Опции</h5>
-      <div class="custom-control custom-checkbox">
-        <input onchange="update_count()" type="checkbox" class="custom-control-input" id="delivery">
-        <label class="custom-control-label" for="delivery">Товары с Куфар Доставкой</label>
-      </div>
-      <div class="custom-control custom-checkbox">
-        <input onchange="update_count()" type="checkbox" class="custom-control-input" id="installment">
-        <label class="custom-control-label" for="installment">Товары в рассрочку</label>
-      </div>
-      <div class="custom-control custom-checkbox">
-        <input onchange="update_count()" type="checkbox" class="custom-control-input" id="withphoto">
-        <label class="custom-control-label" for="withphoto">Только с фото</label>
-      </div>
-      <div class="custom-control custom-checkbox">
-        <input onchange="update_count()" type="checkbox" class="custom-control-input" id="maybetrade">
-        <label class="custom-control-label" for="maybetrade">Возможен обмен</label>
-      </div>
 
-    </div>
-  </div>
+    <hr>
 
-  <hr>
-
-  <div class="form-row mt-2">
-    <div class="col-md-3 mb-3">
-      <label for="region">Область</label>
-      <select onchange="loadAreas(this.value); update_count()" class="custom-select" id="region">
-      </select>
+    <div class="form-row mt-2">
+        <div class="col-md-3 mb-3">
+            <label for="region">Область</label>
+            <select onchange="loadAreas(this.value); update_count()" class="custom-select" id="region">
+            </select>
+        </div>
+        <div class="col-md-3 mb-3">
+            <label for="areas">Город / Район</label>
+            <select disabled onchange="update_count()" class="custom-select" id="areas">
+            </select>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label for="categories">Категория</label>
+            <select class="custom-select" onchange="update_count()" id="categories">
+            </select>
+        </div>
     </div>
-    <div class="col-md-3 mb-3">
-      <label for="areas">Город / Район</label>
-      <select disabled onchange="update_count()" class="custom-select" id="areas">
-      </select>
+    <hr>
+    <div class="row">
+        <div class="col-sm"><strong>Досутпно объявлений:</strong> <span id="ads_count" class="badge badge-dark">0</span>
+        </div>
+        <div class="col-sm"><strong>Получено объявлений:</strong> <span id="ads_parsed"
+                                                                        class="badge badge-light">0</span></div>
+        <div class="col-sm"><strong>Получено страниц:</strong> <span id="pages_getted"
+                                                                     class="badge badge-light">0</span></div>
     </div>
-    <div class="col-md-6 mb-3">
-      <label for="categories">Категория</label>
-      <select class="custom-select" onchange="update_count()" id="categories">
-      </select>
+    <hr>
+    <div class="row">
+        <div class="col-sm"><strong>Скрытых номеров:</strong> <span id="hiddened" class="badge badge-warning">0</span>
+        </div>
+        <div class="col-sm"><strong>Получено номеров:</strong> <span id="parsed" class="badge badge-success">0</span>
+        </div>
+        <div class="col-sm"><strong>Ошибок:</strong> <span id="errors" class="badge badge-danger">0</span></div>
     </div>
-  </div>
-  <hr>
-  <div class="row">
-    <div class="col-sm"><strong>Досутпно объявлений:</strong> <span id="ads_count" class="badge badge-dark">0</span></div>
-    <div class="col-sm"><strong>Получено объявлений:</strong> <span class="badge badge-light">0</span></div>
-    <div class="col-sm"><strong>Получено страниц:</strong> <span id="pages_getted" class="badge badge-light">0</span></div>
-  </div>
-  <hr>
-  <div class="row">
-    <div class="col-sm"><strong>Скрытых номеров:</strong> <span class="badge badge-warning">0</span></div>
-    <div class="col-sm"><strong>Получено номеров:</strong> <span class="badge badge-success">0</span></div>
-  </div>
-  <hr>
-  <div style="height: 30px" id="progress" class="progress">
-    <div class="progress-bar progress-bar-striped bg-dark progress-bar-animated" role="progressbar" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100" style="width: 0%"></div>
-  </div>
-  <div class="row">
-    <div class="col-sm">
-      <button type="submit" class="btn btn-dark mt-2">Выбрать файл выгрузки</button>
-      <svg width="32" height="32" viewBox="0 0 16 16" class="mt-2 ml-1 text-success bi bi-check2-all" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-        <path fill-rule="evenodd" d="M12.354 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
-        <path d="M6.25 8.043l-.896-.897a.5.5 0 1 0-.708.708l.897.896.707-.707zm1 2.414l.896.897a.5.5 0 0 0 .708 0l7-7a.5.5 0 0 0-.708-.708L8.5 10.293l-.543-.543-.707.707z"/>
-      </svg>
+    <hr>
+    <div style="height: 30px" id="progress" class="progress">
+        <div class="progress-bar progress-bar-striped bg-dark progress-bar-animated" role="progressbar"
+             aria-valuenow="75" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
+        </div>
     </div>
-    <div class="col-sm"><div class="float-right">
-      <button onclick="start(this)" class="btn btn-dark mt-2">
-        Старт
-      </button>
-    </div></div>
-  </div>
+    <div class="row">
+        <div class="col-4">
+            <button type="submit" onclick="exportf()" class="btn btn-dark mt-2">Выбрать файл выгрузки</button>
+            <svg id="savefselected" width="32" height="32" viewBox="0 0 16 16"
+                 class="d-none mt-2 ml-1 text-success bi bi-check2-all" fill="currentColor"
+                 xmlns="http://www.w3.org/2000/svg">
+                <path fill-rule="evenodd"
+                      d="M12.354 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
+                <path d="M6.25 8.043l-.896-.897a.5.5 0 1 0-.708.708l.897.896.707-.707zm1 2.414l.896.897a.5.5 0 0 0 .708 0l7-7a.5.5 0 0 0-.708-.708L8.5 10.293l-.543-.543-.707.707z"/>
+            </svg>
+        </div>
+        <div class="col-4">
+            <button type="button" class="btn btn-primary mt-2" data-toggle="modal" data-target="#settings">
+                Настройки
+            </button>
+        </div>
+        <div class="col-2">
+            <div id="timer" class="mt-3 col-1"><strong>00:00:00</strong></div>
+        </div>
+        <div class="col-2">
+            <div class="float-right">
+                <div id="actions" role="group">
+                    <button id="pause_btn" style="display: none" onclick="pause(this)" class="btn btn-dark mt-2">
+                        <svg id="pause_icon" width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-pause-fill"
+                             fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5zm5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5z"/>
+                        </svg>
+                        <svg id="play_icon" style="display: none" width="1em" height="1em" viewBox="0 0 16 16"
+                             class="bi bi-play-fill" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M11.596 8.697l-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/>
+                        </svg>
+                    </button>
+                    <button onclick="start(this)" class="btn btn-dark mt-2">
+                        Старт
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Optional JavaScript; choose one of the two! -->
 <script src="./renderer.js"></script>
-<!-- Option 1: jQuery and Bootstrap Bundle (includes Popper) -->
-<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ho+j7jyWK8fNQe+A12Hb8AhRq26LrZ/JpcUGGOn+Y7RsweNrtN/tE3MoK7ZeZDyx" crossorigin="anonymous"></script>
-
-<!-- Option 2: jQuery, Popper.js, and Bootstrap JS
-<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.min.js" integrity="sha384-w1Q4orYjBQndcko6MimVbzY0tgp4pWB4lZ7lr30WKz0vr/aWKhXdBNmNb5D92v7s" crossorigin="anonymous"></script>
--->
+<script>
+    document.addEventListener('DOMContentLoaded', async () => { // Аналог $(document).ready(function(){
+        for (const [key, value] of Object.entries(await settings.get())) {
+            $('#' + key).val(value)
+        }
+    });
+</script>
 </body>
 </html>
