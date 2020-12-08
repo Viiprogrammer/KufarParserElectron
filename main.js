@@ -4,15 +4,31 @@ const path = require('path');
 const fetch = require('node-fetch');
 const fs = require('fs');
 const cheerio = require('cheerio');
+const settings = require('electron-settings');
 
-function createWindow () {
+async function createWindow () {
+  if(!settings.hasSync('between_requests')){
+    settings.setSync('between_requests', '0')
+  }
+  if(!settings.hasSync('n_request_delay')){
+    settings.setSync('n_request_delay', '10000')
+  }
+  if(!settings.hasSync('n_request_delay_count')){
+    settings.setSync('n_request_delay_count', '80')
+  }
+  if(!settings.hasSync('deliminer')){
+    settings.setSync('deliminer', '|')
+  }
   // Create the browser window.
   const mainWindow = new BrowserWindow({
     width: 800,
+    minWidth: 800,
+    minHeight: 600,
     height: 600,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
-      nodeIntegration: true
+      nodeIntegration: true,
+      enableRemoteModule: true
     }
   })
   mainWindow.loadFile('index.html')
