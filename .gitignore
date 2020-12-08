@@ -1,6 +1,6 @@
 .idea
 *.xlsx
-
+release-builds
 # Logs
 logs
 *.log

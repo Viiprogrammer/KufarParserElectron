@@ -4,7 +4,8 @@
   "description": "",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "build": "electron-packager . --overwrite --asar=true --platform=win32 --arch=ia32 --prune=true --out=release-builds --version-string.CompanyName=CE --version-string.FileDescription=CE --version-string.ProductName=\"Kufar parser\""
   },
   "author": "",
   "license": "ISC",
@@ -13,9 +14,13 @@
     "fs-extra": "^9.0.1",
     "cheerio": "^1.0.0-rc.3",
     "jquery": "^3.5.1",
-    "excel4node": "^1.7.2"
+    "excel4node": "^1.7.2",
+    "bootstrap": "^4.5.3",
+    "popper.js": "^1.16.1",
+    "electron-settings": "^4.0.2"
   },
   "devDependencies": {
-    "electron": "^11.0.3"
+    "electron": "^11.0.3",
+    "electron-packager": "^15.2.0"
   }
 }
