@@ -1,5 +1,5 @@
 // Modules to control application life and create native browser window
-const {app, BrowserWindow, ipcMain} = require('electron');
+const {app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const fetch = require('node-fetch');
 const fs = require('fs');
@@ -10,8 +10,9 @@ async function createWindow () {
   if(!settings.hasSync('between_requests')){
     settings.setSync('between_requests', '0')
   }
+
   if(!settings.hasSync('n_request_delay')){
-    settings.setSync('n_request_delay', '10000')
+    settings.setSync('n_request_delay', '6000')
   }
   if(!settings.hasSync('n_request_delay_count')){
     settings.setSync('n_request_delay_count', '80')
@@ -19,6 +20,10 @@ async function createWindow () {
   if(!settings.hasSync('deliminer')){
     settings.setSync('deliminer', '|')
   }
+  if(!settings.hasSync('ads_on_page')){
+    settings.setSync('ads_on_page', '200')
+  }
+
 
   if(!settings.hasSync('phones_deliminer')){
     settings.setSync('phones_deliminer', ';')
@@ -38,7 +43,7 @@ async function createWindow () {
     }
   })
   mainWindow.loadFile('index.html')
-  mainWindow.webContents.openDevTools()
+  //mainWindow.webContents.openDevTools()
   mainWindow.setMenuBarVisibility(false)
 }
 // This method will be called when Electron has finished
@@ -64,4 +69,18 @@ ipcMain.handle('getRegions', async (event) => {
 ipcMain.handle('getCount', async (event, filter) => {
   const response = await fetch(`https://cre-api.kufar.by/items-search/v1/engine/v1/search/count?${filter}`);
   return await response.json();
+});
+
+ipcMain.handle('fileAdd', async (event, {file, data}) => {
+  fs.appendFile(file, data, function(error){
+    if(error) {
+      dialog.showMessageBox({
+        type: 'error',
+        title: 'Ошибка записи',
+        message: `Ошибка записи в файл экспорта`,
+        detail: error.toString()
+      });
+      process.exit(-1);
+    }
+  });
 });

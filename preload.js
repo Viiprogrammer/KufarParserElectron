@@ -14,6 +14,13 @@ ipcRenderer.invoke('getRegions').then((result) => {
   opt.value = '0';
   categories_el.innerHTML = '';
   categories_el.appendChild(opt);
+
+  /*var opt = document.createElement('option');
+  opt.innerHTML = 'Недвижимость\n';
+  opt.value = '1010';
+  categories_el.innerHTML = '';
+  categories_el.appendChild(opt);*/
+
   for(let i = 1; i < window.categories.length; i++) {
     var opt = document.createElement('option');
     opt.innerHTML = window.categories[i]['labels']['ru'];

@@ -30,12 +30,28 @@
             </div>
             <div class="modal-body">
                 <div class="alert alert-info" role="alert">
+                    Параметр отвечающий за кол-во объявлений получаемых за один раз, чем больше - тем лучше.
+                    Минимум 42. Максимум 200.
+                </div>
+                <div class="row">
+                    <div class="col-md">
+                        <div class="form-group">
+                            <label for="between_requests">Кол-во объявлений за 1 запрос:</label>
+                            <input value="0" type="number" onkeyup="(() => {
+                enforceMinMax(this);
+                settings.set(this.id, this.value)
+              })()" min="42" max="200" maxlength="4" class="form-control" id="ads_on_page" placeholder="">
+                        </div>
+                    </div>
+                </div>
+                <hr>
+                <div class="alert alert-info" role="alert">
                     Задержка после каждого выполненого запроса
                 </div>
                 <div class="row">
                     <div class="col-md">
                         <div class="form-group">
-                            <label for="between_requests">Задержка между запросами:</label>
+                            <label for="between_requests">Задержка между запросами (ms):</label>
                             <input value="0" type="number" onkeyup="(() => {
                 enforceMinMax(this);
                 settings.set(this.id, this.value)
@@ -45,12 +61,14 @@
                 </div>
                 <hr>
                 <div class="alert alert-info" role="alert">
-                    Настройки предической паузы каждые N запросов для обхода ограниченией сервера
+                    Настройки предической паузы каждые N запросов для обхода ограниченией сервера.
+                    Чем  меньше - тем больше возможность недачи запроса при большом их кол-ве.
+                    Ни на что принципиально не влияет, но крайне не рекомендуется снижать менее 5000 мс
                 </div>
                 <div class="row">
                     <div class="col-md">
                         <div class="form-group">
-                            <label for="n_request_delay">Задержка каждые N запросов:</label>
+                            <label for="n_request_delay">Задержка каждые N запросов (ms):</label>
                             <input value="0" type="number" onkeyup="(() => {
                 enforceMinMax(this);
                 settings.set(this.id, this.value)
@@ -61,7 +79,7 @@
                 <div class="row">
                     <div class="col-md">
                         <div class="form-group">
-                            <label for="n_request_delay_count">Кол-во запросов:</label>
+                            <label for="n_request_delay_count">Кол-во запросов перед задержкой:</label>
                             <input value="0" type="number" onkeyup="(() => {
                 enforceMinMax(this);
                 settings.set(this.id, this.value)
