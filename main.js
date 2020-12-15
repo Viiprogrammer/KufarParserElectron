@@ -43,7 +43,7 @@ async function createWindow () {
     }
   })
   mainWindow.loadFile('index.html')
-  //mainWindow.webContents.openDevTools()
+  mainWindow.webContents.openDevTools()
   mainWindow.setMenuBarVisibility(false)
 }
 // This method will be called when Electron has finished

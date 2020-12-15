@@ -87,7 +87,32 @@
                         </div>
                     </div>
                 </div>
+
+                <hr>
+
                 <h4>Export</h4>
+
+                <div class="alert alert-info" role="alert">
+                    Включение флага создает дубли объявления с каждым из его номеров.
+                    По умолчанию 1 строка импорта — объявление и в поле телефона номера перечисляются через указанный разделитель.
+                    Может быть актуально при использовании последующей уникализации, номеров
+                </div>
+                <div class="row">
+                    <div class="col-md">
+                        <div class="form-group">
+                            <div class="custom-control custom-checkbox">
+                                <input onchange="(() => {
+                                    console.log(this.checked)
+                settings.set(this.id, this.checked)
+              })()" type="checkbox" class="custom-control-input" id="dublicate">
+                                <label class="custom-control-label" for="dublicate">Дублирование объявлений для каждого номера</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <hr>
                 <div class="alert alert-info" role="alert">
                     Разделитель будет использован при экспорте в текстовый файл *.txt
                 </div>
@@ -103,7 +128,7 @@
                     </div>
                 </div>
 
-
+                <hr>
                 <div class="alert alert-info" role="alert">
                     Разделитель нескольких номеров телефонов
                 </div>
@@ -287,7 +312,11 @@
 <script>
     document.addEventListener('DOMContentLoaded', async () => { // Аналог $(document).ready(function(){
         for (const [key, value] of Object.entries(await settings.get())) {
-            $('#' + key).val(value)
+            if($('#' + key).attr('type') !== "checkbox"){
+                $('#' + key).val(value)
+            } else {
+                $('#' + key).prop('checked', value);
+            }
         }
     });
 </script>

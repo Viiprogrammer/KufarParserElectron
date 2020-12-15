@@ -18,11 +18,12 @@ let one_second = 1000,
     paused = false,
     face = document.getElementById('timer'),
     export_file,
-    data = [],
     wb = null,
     ws = null,
     title = null,
-    info = null;
+    info = null,
+    interrupted = false,
+    fields = ['Имя', 'Номер', 'Адрес магазина', 'Адрес компании', 'Сайт', 'Импортер', 'Кoнтактное лицо', 'Объявление'];
 
 window.onerror = function(error, url, line) {
     fs.writeFile("error.log", `Error: ${error}\r\nLine:${line}\r\nUrl:${url}`, 'utf8', function(err) {
@@ -198,44 +199,32 @@ async function exel_save(){
         });
     })
 }
+
 async function start(el) {
-    if(export_file === undefined || export_file.canceled) {
-        let file_selected = await dialog.showMessageBox({
-            type: 'info',
-            title: 'Ошибка',
-            message: `Не указан файл экспорта`,
-            buttons: ['Прервать', 'Выбрать файл']
-        })
-            .then(async ({response}) => {
-                if(response) {
-                    return await exportf();
-                }
-            });
-        console.log(file_selected)
-        if(export_file === undefined || export_file.canceled == true || !export_file.filePath){
-            console.log(export_file)
-            return false;
+    if(stoped) {
+        if (export_file === undefined || export_file.canceled) {
+            let file_selected = await dialog.showMessageBox({
+                type: 'info',
+                title: 'Ошибка',
+                message: `Не указан файл экспорта`,
+                buttons: ['Прервать', 'Выбрать файл']
+            })
+                .then(async ({response}) => {
+                    if (response) {
+                        return await exportf();
+                    }
+                });
+            console.log(file_selected)
+            if (export_file === undefined || export_file.canceled == true || !export_file.filePath) {
+                console.log(export_file)
+                return false;
+            }
         }
     }
     const export_file_ext = export_file.filePath.split('.').pop();
     //Остановка парсинга
     if (!stoped) {
-        stoped = true;
-        paused = false;
-        $('#actions').removeClass('btn-group');
-        $("#pause_btn").hide();
-        $("#pause_icon").show();
-        $("#play_icon").hide();
-        el.innerText = 'Старт'
-        el.classList.add('btn-dark')
-        el.classList.remove('btn-danger');
-        $("#progress > div").removeClass('progress-bar-animated')
-        interface_status(true);
-        //Exel
-        if(export_file_ext == 'xlsx') {
-            await exel_save();
-        }
-        export_file = undefined;
+        interrupted = true;
         return false;
     }
 
@@ -244,11 +233,13 @@ async function start(el) {
         delay_n = Number($("#n_request_delay_count").val()),
         delimiter = $("#deliminer").val().trim(),
         phones_delimiter = $("#phones_deliminer").val().trim(),
-        ads_on_page = Number($("#ads_on_page").val());
+        ads_on_page = Number($("#ads_on_page").val()),
+        dublicate = document.querySelector('[id="dublicate"]').checked;
 
     let hiddened_count = 0,
         numbers_parsed = 0,
         ads_parsed = 0,
+        numbers_ads_parsed = 0,
         errors = 0,
         response,
         json,
@@ -262,18 +253,20 @@ async function start(el) {
         wb = new xl.Workbook(), ws = wb.addWorksheet('Sheet 1');
         title = wb.createStyle({font: {bold: true}, alignment: {horizontal: ['center']}}),
         info = wb.createStyle({alignment: {horizontal: ['center']}});
-        ws.column(1).setWidth(60);
-        ws.column(2).setWidth(70);
-
-        ws.cell(1, 1)
-            .string('Имя')
-            .style(title);
-        ws.cell(1, 2)
-            .string('Номер')
-            .style(title);
+        for (let index = 0; index != fields.length; index++){
+            console.log(fields[index])
+            ws.cell(1, index+1)
+                .string(fields[index])
+                .style(title);
+            ws.column( index+1).setWidth(70);
+        }
     } else if(export_file_ext == 'txt'){
         try {
-            fs.writeFileSync(export_file.filePath, `Имя${delimiter}Номер`, { mode: 0o755 });
+            let head_string = '';
+            for (let index = 0; index != fields.length; index++){
+                head_string += fields[index]+(index != fields.length-1 ? delimiter : "\r\n");
+            }
+            fs.writeFileSync(export_file.filePath, head_string, { mode: 0o755 });
         } catch(err) {
             dialog.showMessageBox({
                 type: 'error',
@@ -302,7 +295,28 @@ async function start(el) {
 
     $("#progress > div").addClass('progress-bar-animated')
 
-    while (next && !stoped) {
+    while (next) {
+        if(interrupted){
+            interrupted = false;
+            stoped = true;
+            paused = false;
+            $('#actions').removeClass('btn-group');
+            $("#pause_btn").hide();
+            $("#pause_icon").show();
+            $("#play_icon").hide();
+            el.innerText = 'Старт'
+            el.classList.add('btn-dark')
+            el.classList.remove('btn-danger');
+            $("#progress > div").removeClass('progress-bar-animated')
+            interface_status(true);
+
+            //Exel
+            if(export_file_ext == 'xlsx') {
+                await exel_save();
+            }
+            export_file = undefined;
+            break;
+        }
         if (!paused) {
             response = await fetch('https://cre-api.kufar.by/items-search/v1/engine/v1/search/rendered-paginated?' + query(cursor), {
                 headers: {
@@ -316,21 +330,91 @@ async function start(el) {
                     for (let ad of json.ads) {
                         ads_parsed++;
                         if (ad.phone_hidden === false && ad.phone) {
-                            numbers_parsed++;
+                            numbers_parsed += ad.phone.split(',').length;
                             if (ad.account_parameters !== undefined) {
                                 const name = ad.account_parameters.find((x) => x.p === 'name');
                                 const phones = ad.phone.split(',').join(phones_delimiter);
+                                const shop_guarantee = ad.account_parameters.find((x) => x.p === 'shop_guarantee');
+                                const shop_address = ad.account_parameters.find((x) => x.p === 'shop_address');
+                                const company_address = ad.account_parameters.find((x) => x.p === 'company_address');
+                                const web_shop_link = ad.account_parameters.find((x) => x.p === 'web_shop_link');
+                                const shop_manufacturer = ad.account_parameters.find((x) => x.p === 'shop_manufacturer');
+                                const contact_person = ad.account_parameters.find((x) => x.p === 'contact_person');
                                 if(name && phones) {
+                                    /*data.add({
+                                        name: name.v,
+                                        phones: phones,
+                                        shop_guarantee: shop_guarantee?.v || '',
+                                        shop_address: shop_address?.v || '',
+                                        company_address: company_address?.v || '',
+                                        web_shop_link: web_shop_link?.v || '',
+                                        shop_manufacturer: shop_manufacturer?.v || '',
+                                        contact_person: contact_person?.v || '',
+                                        ad_link: ad.ad_link
+                                    });*/
                                     //Exel
-                                    if(export_file_ext == 'xlsx') {
-                                        ws.cell(numbers_parsed + 1, 1)
-                                            .string(capitalizeFirstLetter(name.v.trim()))
-                                            .style(info);
-                                        ws.cell(numbers_parsed + 1, 2)
-                                            .string(phones)
-                                            .style(info);
-                                    } else if(export_file_ext == 'txt') {
-                                        ipcRenderer.invoke('fileAdd', {file: export_file.filePath, data: `${capitalizeFirstLetter(name.v.trim())}${delimiter}${phones}\r\n`});
+                                    console.log(dublicate)
+                                    if(ad.phone.split(',').length !== 1 && dublicate){
+                                        for(const number of ad.phone.split(',')) {
+                                            numbers_ads_parsed++;
+                                            let fields_data = [
+                                                capitalizeFirstLetter(name.v.trim()),
+                                                number,
+                                                shop_address?.v || '',
+                                                company_address?.v || '',
+                                                web_shop_link?.v || '',
+                                                shop_manufacturer?.v || '',
+                                                contact_person?.v || '',
+                                                ad.ad_link
+                                            ];
+
+                                            if (export_file_ext == 'xlsx') {
+                                                for (let index = 0; index != fields_data.length; index++){
+                                                    ws.cell(numbers_ads_parsed + 1, index+1)
+                                                        .string(fields_data[index])
+                                                        .style(info);
+
+                                                }
+                                            } else if (export_file_ext == 'txt') {
+                                                let data_string = '';
+                                                for (let index = 0; index != fields_data.length; index++){
+                                                    data_string += fields_data[index]+(index != fields_data.length-1 ? delimiter : "\r\n");
+                                                }
+                                                await ipcRenderer.invoke('fileAdd', {
+                                                    file: export_file.filePath,
+                                                    data: data_string
+                                                });
+                                            }
+                                        }
+                                    }   else{
+                                        numbers_ads_parsed++;
+                                        let fields_data = [
+                                            capitalizeFirstLetter(name.v.trim()),
+                                            phones,
+                                            shop_address?.v || '',
+                                            company_address?.v || '',
+                                            web_shop_link?.v || '',
+                                            shop_manufacturer?.v || '',
+                                            contact_person?.v || '',
+                                            ad.ad_link
+                                        ];
+
+                                        if (export_file_ext == 'xlsx') {
+                                            for (let index = 0; index != fields_data.length; index++){
+                                                ws.cell(numbers_ads_parsed + 1, index+1)
+                                                    .string(fields_data[index])
+                                                    .style(info);
+                                            }
+                                        } else if (export_file_ext == 'txt') {
+                                            let data_string = '';
+                                            for (let index = 0; index != fields_data.length; index++){
+                                                data_string += fields_data[index]+(index != fields_data.length-1 ? delimiter : "\r\n");
+                                            }
+                                            await ipcRenderer.invoke('fileAdd', {
+                                                file: export_file.filePath,
+                                                data: data_string
+                                            });
+                                        }
                                     }
                                 }
                                 //if (ad.company_ad === false) {
@@ -338,6 +422,8 @@ async function start(el) {
                                 //        console.log(capitalizeFirstLetter(name.v.trim()), phones)
                                 //    }
                                 //}
+                            } else {
+                                console.log(ad.account_parameters)
                             }
                         } else hiddened_count++;
                     }
